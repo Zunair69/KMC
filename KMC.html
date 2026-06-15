@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KMC Kan Mohla Champions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Inter:wght@400;500;600&display=swap');
+        
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background: linear-gradient(rgba(0,0,0,0.75), rgba(0,0,0,0.85)), 
+                        url('https://picsum.photos/id/1015/1920/1080') fixed center/cover;
+            min-height: 100vh;
+        }
+        .title-font { font-family: 'Playfair Display', serif; }
+
+        .glass { 
+            background: rgba(255,255,255,0.08); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid rgba(234,179,8,0.25);
+        }
+
+        .cursor-glow {
+            position: fixed; width: 650px; height: 650px;
+            background: radial-gradient(circle, rgba(45, 212, 191, 0.35) 0%, transparent 70%);
+            pointer-events: none; z-index: 1; transform: translate(-50%, -50%);
+            mix-blend-mode: screen;
+        }
+
+        /* Cool Button */
+        .cool-button {
+            background: linear-gradient(90deg, #eab308, #facc15);
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            outline: none;
+            box-shadow: 0 0 15px rgba(234,179,8,0.6);
+            transition: box-shadow 0.3s ease, transform 0.1s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .cool-button::before {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 300%; height: 300%;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 10%, transparent 70%);
+            transform: translate(-50%, -50%) scale(0);
+            transition: transform 0.5s ease;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        .cool-button:hover {
+            box-shadow: 0 0 30px rgba(234,179,8,0.9), 0 0 50px rgba(234,179,8,0.6);
+        }
+        .cool-button:hover::before {
+            transform: translate(-50%, -50%) scale(1);
+        }
+
+        .tilt-card, .glass {
+            transition: transform 0.12s ease-out;
+        }
+
+        /* Tab Switching Animation */
+        .tab-section {
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            opacity: 1;
+        }
+        .tab-section.hidden {
+            opacity: 0;
+            transform: translateY(30px);
+            pointer-events: none;
+        }
+
+        /* Black Fade Transition Overlay */
+        #transition-overlay {
+            position: fixed;
+            inset: 0;
+            background: #000;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease-in-out;
+        }
+    </style>
+</head>
+<body class="text-white relative">
+    <div id="cursor-glow" class="cursor-glow"></div>
+    <div id="transition-overlay"></div>
+
+    <div class="max-w-7xl mx-auto px-8 py-12">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-16 border-b border-yellow-500/30 pb-8">
+            <div class="flex items-center gap-5 pop-in">
+                <div class="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-6xl cricket-ball">🏏</div>
+                <div>
+                    <h1 class="title-font text-6xl font-bold text-yellow-400">KMC</h1>
+                    <p class="text-3xl -mt-2">KAN MOHLA CHAMPIONS</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-10 text-xl">
+                <button onclick="switchTab(0)" id="batsmen-tab" class="tab-link active hover:text-yellow-400 px-6 py-2 transition-colors">BATSMEN</button>
+                <button onclick="switchTab(1)" id="bowlers-tab" class="tab-link hover:text-yellow-400 px-6 py-2 transition-colors">BOWLERS</button>
+                <button onclick="exportToCSV()" class="cool-button px-8 py-4 font-bold text-black flex items-center gap-2">EXPORT CSV</button>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="grid grid-cols-4 gap-8 mb-20">
+            <div class="glass rounded-3xl p-10 text-center tilt-card pop-in"><div class="text-yellow-400">TOTAL RUNS</div><div id="total-runs" class="text-7xl font-bold title-font mt-3">14280</div></div>
+            <div class="glass rounded-3xl p-10 text-center tilt-card pop-in"><div class="text-yellow-400">TOTAL WICKETS</div><div id="total-wickets" class="text-7xl font-bold title-font mt-3">612</div></div>
+            <div class="glass rounded-3xl p-10 text-center tilt-card pop-in"><div class="text-yellow-400">BATTING AVG</div><div id="avg-batting" class="text-7xl font-bold title-font mt-3">49.7</div></div>
+            <div class="glass rounded-3xl p-10 text-center tilt-card pop-in"><div class="text-yellow-400">BOWLING AVG</div><div id="avg-bowling" class="text-7xl font-bold title-font mt-3">23.1</div></div>
+        </div>
+
+        <!-- Batsmen -->
+        <div id="batsmen-section" class="tab-section">
+            <h2 class="text-6xl font-bold title-font mb-10 flex items-center gap-4 pop-in"><span class="text-yellow-400">🏏</span> ELITE BATSMEN</h2>
+            <div class="glass rounded-3xl overflow-hidden">
+                <table class="w-full">
+                    <thead><tr class="border-b border-yellow-500/30 text-yellow-400 text-xl">
+                        <th class="text-left p-8">PLAYER</th>
+                        <th class="text-left p-8">MATCHES</th>
+                        <th class="text-left p-8">RUNS</th>
+                        <th class="text-left p-8">AVG</th>
+                        <th class="text-left p-8">SR</th>
+                        <th class="text-left p-8">HS</th>
+                        <th class="w-44"></th>
+                    </tr></thead>
+                    <tbody id="batsmen-table" class="divide-y divide-white/10"></tbody>
+                </table>
+            </div>
+            <button onclick="addPlayer('batsmen')" class="cool-button mt-10 px-12 py-6 text-xl font-bold text-black">+ ADD BATSMAN</button>
+        </div>
+
+        <!-- Bowlers -->
+        <div id="bowlers-section" class="tab-section hidden">
+            <h2 class="text-6xl font-bold title-font mb-10 flex items-center gap-4 pop-in"><span class="text-yellow-400">🎳</span> ELITE BOWLERS</h2>
+            <div class="glass rounded-3xl overflow-hidden">
+                <table class="w-full">
+                    <thead><tr class="border-b border-yellow-500/30 text-yellow-400 text-xl">
+                        <th class="text-left p-8">PLAYER</th>
+                        <th class="text-left p-8">MATCHES</th>
+                        <th class="text-left p-8">WICKETS</th>
+                        <th class="text-left p-8">AVG</th>
+                        <th class="text-left p-8">ECON</th>
+                        <th class="text-left p-8">BBI</th>
+                        <th class="w-44"></th>
+                    </tr></thead>
+                    <tbody id="bowlers-table" class="divide-y divide-white/10"></tbody>
+                </table>
+            </div>
+            <button onclick="addPlayer('bowlers')" class="cool-button mt-10 px-12 py-6 text-xl font-bold text-black">+ ADD BOWLER</button>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div id="player-modal" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center z-50">
+        <div id="modal-content" class="glass rounded-3xl p-10 w-full max-w-md modal-pop">
+            <h3 id="modal-title" class="text-4xl font-bold mb-8 title-font text-center">Add New Player</h3>
+            <div class="space-y-6">
+                <input id="player-name" type="text" placeholder="Player Name" class="input-box w-full bg-white/10 border border-yellow-400/30 rounded-3xl px-6 py-5 text-lg">
+                <div class="grid grid-cols-2 gap-5">
+                    <input id="matches" type="number" placeholder="Matches" class="input-box w-full bg-white/10 border border-yellow-400/30 rounded-3xl px-6 py-5 text-lg">
+                    <input id="stat1" type="number" placeholder="Runs / Wickets" class="input-box w-full bg-white/10 border border-yellow-400/30 rounded-3xl px-6 py-5 text-lg">
+                </div>
+                <div class="grid grid-cols-2 gap-5">
+                    <input id="average" type="number" step="0.1" placeholder="Average" class="input-box w-full bg-white/10 border border-yellow-400/30 rounded-3xl px-6 py-5 text-lg">
+                    <input id="stat2" type="number" step="0.1" placeholder="SR / Econ" class="input-box w-full bg-white/10 border border-yellow-400/30 rounded-3xl px-6 py-5 text-lg">
+                </div>
+            </div>
+            <div class="flex gap-4 mt-10">
+                <button onclick="savePlayer()" class="flex-1 cool-button py-6 text-xl font-bold text-black">SAVE CHAMPION</button>
+                <button onclick="closeModal()" class="flex-1 bg-white/10 py-6 rounded-3xl font-bold text-xl">CANCEL</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let batsmen = [], bowlers = [], editingIndex = null, editingType = null;
+
+        function initSampleData() {
+            batsmen = [{name:"Virat Kohli", matches:280, runs:13848, avg:52.8, sr:93.2, hs:183}];
+            bowlers = [{name:"Jasprit Bumrah", matches:130, wickets:185, avg:20.4, economy:4.8, bbi:"6/19"}];
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('kmc_batsmen', JSON.stringify(batsmen));
+            localStorage.setItem('kmc_bowlers', JSON.stringify(bowlers));
+            updateStats();
+        }
+
+        function loadData() {
+            const b = localStorage.getItem('kmc_batsmen');
+            const bo = localStorage.getItem('kmc_bowlers');
+            if (b) batsmen = JSON.parse(b);
+            if (bo) bowlers = JSON.parse(bo);
+            if (batsmen.length === 0) initSampleData();
+        }
+
+        function renderBatsmen() {
+            const tbody = document.getElementById('batsmen-table');
+            tbody.innerHTML = '';
+            batsmen.forEach((p, i) => {
+                const tr = document.createElement('tr');
+                tr.className = 'player-row border-b border-white/10 hover:bg-white/10 transition-all';
+                tr.innerHTML = `<td class="p-8 font-semibold">${p.name}</td><td class="p-8">${p.matches}</td><td class="p-8 text-emerald-400">${p.runs}</td><td class="p-8">${p.avg}</td><td class="p-8">${p.sr}</td><td class="p-8">${p.hs}</td>
+                <td class="p-8 space-x-8"><button onclick="editPlayer('batsmen',${i})" class="text-yellow-400 text-3xl"><i class="fas fa-edit"></i></button><button onclick="deletePlayer('batsmen',${i})" class="text-red-400 text-3xl"><i class="fas fa-trash"></i></button></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderBowlers() {
+            const tbody = document.getElementById('bowlers-table');
+            tbody.innerHTML = '';
+            bowlers.forEach((p, i) => {
+                const tr = document.createElement('tr');
+                tr.className = 'player-row border-b border-white/10 hover:bg-white/10 transition-all';
+                tr.innerHTML = `<td class="p-8 font-semibold">${p.name}</td><td class="p-8">${p.matches}</td><td class="p-8 text-emerald-400">${p.wickets}</td><td class="p-8">${p.avg}</td><td class="p-8">${p.economy}</td><td class="p-8">${p.bbi}</td>
+                <td class="p-8 space-x-8"><button onclick="editPlayer('bowlers',${i})" class="text-yellow-400 text-3xl"><i class="fas fa-edit"></i></button><button onclick="deletePlayer('bowlers',${i})" class="text-red-400 text-3xl"><i class="fas fa-trash"></i></button></td>`;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats() {
+            const tr = batsmen.reduce((a,p)=>a + (p.runs||0),0);
+            const tw = bowlers.reduce((a,p)=>a + (p.wickets||0),0);
+            document.getElementById('total-runs').textContent = tr;
+            document.getElementById('total-wickets').textContent = tw;
+            document.getElementById('avg-batting').textContent = batsmen.length ? (tr/batsmen.length).toFixed(1) : 0;
+            document.getElementById('avg-bowling').textContent = bowlers.length ? (tw/bowlers.length).toFixed(1) : 0;
+        }
+
+        function switchTab(n) {
+            const overlay = document.getElementById('transition-overlay');
+            const batsmenSec = document.getElementById('batsmen-section');
+            const bowlersSec = document.getElementById('bowlers-section');
+            const batsmenTab = document.getElementById('batsmen-tab');
+            const bowlersTab = document.getElementById('bowlers-tab');
+
+            // Active tab
+            batsmenTab.classList.toggle('active', n === 0);
+            bowlersTab.classList.toggle('active', n === 1);
+
+            // Black fade transition
+            overlay.style.transition = 'opacity 0.25s ease-in';
+            overlay.style.opacity = '0.92';
+
+            setTimeout(() => {
+                if (n === 0) {
+                    bowlersSec.classList.add('hidden');
+                    batsmenSec.classList.remove('hidden');
+                } else {
+                    batsmenSec.classList.add('hidden');
+                    bowlersSec.classList.remove('hidden');
+                }
+
+                // Fade out black
+                overlay.style.transition = 'opacity 0.4s ease-out';
+                overlay.style.opacity = '0';
+            }, 280);
+        }
+
+        function addPlayer(type) {
+            editingIndex = null; editingType = type;
+            document.getElementById('modal-title').textContent = type === 'batsmen' ? 'Add New Batsman' : 'Add New Bowler';
+            document.getElementById('player-name').value = document.getElementById('matches').value = document.getElementById('stat1').value = document.getElementById('average').value = document.getElementById('stat2').value = '';
+            const modal = document.getElementById('player-modal');
+            const content = document.getElementById('modal-content');
+            modal.classList.remove('hidden');
+            content.classList.remove('modal-pop');
+            void content.offsetWidth;
+            content.classList.add('modal-pop');
+        }
+
+        function savePlayer() {
+            const name = document.getElementById('player-name').value.trim();
+            if (!name) return alert("Player name required!");
+            const matches = parseInt(document.getElementById('matches').value) || 0;
+            const avg = parseFloat(document.getElementById('average').value) || 0;
+            const stat1 = parseFloat(document.getElementById('stat1').value) || 0;
+            const stat2 = parseFloat(document.getElementById('stat2').value) || 0;
+
+            if (editingType === 'batsmen') {
+                const data = {name, matches, runs: stat1, avg, sr: stat2, hs: Math.round(stat1 / Math.max(matches,1) * 1.3)};
+                editingIndex !== null ? batsmen[editingIndex] = data : batsmen.push(data);
+            } else {
+                const data = {name, matches, wickets: stat1, avg, economy: stat2, bbi: "5/30"};
+                editingIndex !== null ? bowlers[editingIndex] = data : bowlers.push(data);
+            }
+            saveToLocalStorage();
+            renderBatsmen();
+            renderBowlers();
+            updateStats();
+            closeModal();
+            triggerConfetti();
+        }
+
+        function deletePlayer(type, index) {
+            if (confirm("Delete this player?")) {
+                type === 'batsmen' ? batsmen.splice(index,1) : bowlers.splice(index,1);
+                saveToLocalStorage();
+                renderBatsmen();
+                renderBowlers();
+                updateStats();
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('player-modal').classList.add('hidden');
+        }
+
+        function exportToCSV() {
+            let csv = "Type,Name,Matches,Runs/Wkts,Avg,SR/Econ,HS/BBI\n";
+            batsmen.forEach(p => csv += `Batsman,${p.name},${p.matches},${p.runs},${p.avg},${p.sr},${p.hs}\n`);
+            bowlers.forEach(p => csv += `Bowler,${p.name},${p.matches},${p.wickets},${p.avg},${p.economy},${p.bbi}\n`);
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+            a.download = 'kmc_stats.csv';
+            a.click();
+        }
+
+        function triggerConfetti() {
+            for(let i = 0; i < 100; i++) {
+                setTimeout(() => {
+                    const c = document.createElement('div');
+                    c.textContent = '🏏🎉🏆';
+                    c.style.position = 'fixed';
+                    c.style.left = Math.random()*100 + 'vw';
+                    c.style.top = '-60px';
+                    c.style.fontSize = '2.8rem';
+                    c.style.zIndex = '9999';
+                    c.style.transition = 'all 3s';
+                    document.body.appendChild(c);
+                    setTimeout(() => {
+                        c.style.transform = `translateY(${window.innerHeight + 200}px) rotate(${Math.random()*1000}deg)`;
+                        c.style.opacity = '0';
+                    }, 30);
+                    setTimeout(() => c.remove(), 3200);
+                }, i * 18);
+            }
+        }
+
+        // Mouse Glow + Tilt
+        document.addEventListener('mousemove', e => {
+            document.getElementById('cursor-glow').style.left = e.clientX + 'px';
+            document.getElementById('cursor-glow').style.top = e.clientY + 'px';
+        });
+
+        document.querySelectorAll('.tilt-card, .glass').forEach(el => {
+            el.addEventListener('mousemove', e => {
+                const rect = el.getBoundingClientRect();
+                const x = (e.clientX - rect.left) / rect.width - 0.5;
+                const y = (e.clientY - rect.top) / rect.height - 0.5;
+                el.style.transform = `perspective(1600px) rotateX(${y * -22}deg) rotateY(${x * 28}deg)`;
+            });
+            el.addEventListener('mouseleave', () => el.style.transform = '');
+        });
+
+        window.onload = () => {
+            loadData();
+            renderBatsmen();
+            renderBowlers();
+            updateStats();
+            switchTab(0);
+        };
+    </script>
+</body>
+</html>
